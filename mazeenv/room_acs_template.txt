@@ -1,0 +1,312 @@
+//
+// Modified from https://github.com/microsoft/MazeExplorer/blob/master/mazeexplorer/content/acs_template.txt
+//
+
+#include "zcommon.acs"
+
+#define TARGET_ID_START 1000
+#define GOAL_TID 999
+
+int TARGET_ID_END = TARGET_ID_START;
+
+global int 0:reward;
+global int 1:goal_x;
+global int 2:goal_y;
+global int 3:goal_z;
+global int 4:map_level;
+global int 5:key_obj_idx;
+global int 6:last_obj_picked;
+
+int target_id_offset = 10000;
+int target_id;
+bool obj_exists[ $number_keys ];
+
+int number_keys = $number_keys;
+bool random_textures = $random_textures;
+
+int xmin = $xmin;
+int ymin = $ymin;
+int xmax = $xmax;
+int ymax = $ymax;
+int offset = 48.0;
+
+bool random_key_textures = $random_key_textures;
+int num_key_textures[ $number_keys ] = $num_key_textures;
+str key_textures[ $number_keys ][ $max_category_size ] = $key_textures;
+int curr_key_textures[ $number_keys ];
+int default_key_textures[ $number_keys ] = $default_key_textures;
+int num_keys_used = $num_keys_used;
+int keys_used[ $num_keys_used ] = $keys_used;
+
+str floor_texture = "$floor_texture";
+str ceiling_texture = "$ceiling_texture";
+str wall_texture = "$wall_texture";
+
+int SPAWN_LOC_ID = 0;
+
+bool random_key_positions = $random_key_positions;
+bool use_abs_keys_spawn_pos = $use_abs_keys_spawn_pos;
+int abs_keys_spawn_x[ $number_keys ] = { $abs_keys_spawn_x };
+int abs_keys_spawn_y[ $number_keys ] = { $abs_keys_spawn_y };
+int keys_spawn[ $number_keys_maps ] = { $keys_spawn };
+int keys_spawn_offset_x[ $number_keys_maps ] = { $keys_spawn_offset_x };
+int keys_spawn_offset_y[ $number_keys_maps ] = { $keys_spawn_offset_y };
+
+bool random_spawn = $random_spawn;
+bool use_abs_spawn_pos = $use_abs_spawn_pos;
+int abs_spawn_x = $abs_spawn_x;
+int abs_spawn_y = $abs_spawn_y;
+int spawns[ $number_maps ] = { $spawns };
+int spawns_offset_x[ $number_maps ] = { $spawns_offset_x };
+int spawns_offset_y[ $number_maps ] = { $spawns_offset_y };
+int spawns_angle[ $number_maps ] = { $spawns_angle };
+
+str texturesToRandomize[ $num_textures ] = $textures
+
+int rand_queue[ $number_keys ];
+int queue_len;
+
+function str GetRandomTexture(void)
+{
+    return texturesToRandomize[Random(0, $num_textures - 1 )];
+}
+
+function void RandomTextures(void)
+{
+    ReplaceTextures("CEIL5_2", GetRandomTexture());
+    ReplaceTextures("CEIL5_1", GetRandomTexture());
+    ReplaceTextures("STONE2", GetRandomTexture());
+    Light_ChangeToValue(0, Random(150, 255));
+}
+
+function void SpawnKeyAbsPos(int pos_idx, int obj_idx)
+{
+    str key_obj_texture = key_textures[obj_idx][curr_key_textures[obj_idx]];
+    bool is_target = (obj_idx == key_obj_idx);
+    if (is_target)
+    {
+        target_id = target_id_offset + obj_idx;
+        Spawn(key_obj_texture, abs_keys_spawn_x[pos_idx], abs_keys_spawn_y[pos_idx], 0.0, target_id, 128);
+        SetThingSpecial(target_id, ACS_ExecuteAlways, 5);
+    }
+    else
+    {
+        Spawn(key_obj_texture, abs_keys_spawn_x[pos_idx], abs_keys_spawn_y[pos_idx], 0.0, target_id_offset + obj_idx, 128);
+        SetThingSpecial(target_id_offset + obj_idx, ACS_ExecuteAlways, 6);
+    }
+}
+
+function void SpawnKeyRandom(int i, str key_obj_texture, bool is_target)
+{
+    TARGET_ID_END = TARGET_ID_START;
+    while(IsTIDUsed(TARGET_ID_END + 1))
+    {
+        TARGET_ID_END += 1;
+    }
+
+    SPAWN_LOC_ID = random(TARGET_ID_START, TARGET_ID_END);
+
+    if (is_target)
+    {
+        target_id = target_id_offset + i;
+        Spawn(key_obj_texture, GetActorX(SPAWN_LOC_ID) + random(-offset, offset), GetActorY(SPAWN_LOC_ID) + random(-offset, offset), 0.0, target_id, 128);
+        SetThingSpecial(target_id, ACS_ExecuteAlways, 5);
+    }
+    else
+    {
+        Spawn(key_obj_texture, GetActorX(SPAWN_LOC_ID) + random(-offset, offset), GetActorY(SPAWN_LOC_ID) + random(-offset, offset), 0.0, target_id_offset + i, 128);
+        SetThingSpecial(target_id_offset + i, ACS_ExecuteAlways, 6);
+    }
+}
+
+function void SpawnKey(int i, str key_obj_texture, bool is_target)
+{
+    TARGET_ID_END = TARGET_ID_START;
+    while(IsTIDUsed(TARGET_ID_END + 1))
+    {
+        TARGET_ID_END += 1;
+    }
+
+    int TARGET_ID_START_float = TARGET_ID_START << 16;
+    int TARGET_ID_END_float = TARGET_ID_END << 16;
+
+    int SPAWN_LOC_ID_float = FixedMul (keys_spawn[i], (TARGET_ID_END_float - TARGET_ID_START_float)) +  TARGET_ID_START_float;
+    SPAWN_LOC_ID = SPAWN_LOC_ID_float >> 16;
+
+    if (is_target)
+    {
+        target_id = target_id_offset + i;
+        Spawn(key_obj_texture, GetActorX(SPAWN_LOC_ID) + keys_spawn_offset_x[i], GetActorY(SPAWN_LOC_ID) + keys_spawn_offset_y[i], 0.0, target_id, 128);
+        SetThingSpecial(target_id, ACS_ExecuteAlways, 5);
+    }
+    else
+    {
+        Spawn(key_obj_texture, GetActorX(SPAWN_LOC_ID) + keys_spawn_offset_x[i], GetActorY(SPAWN_LOC_ID) + keys_spawn_offset_y[i], 0.0, target_id_offset + i, 128);
+        SetThingSpecial(target_id_offset + i, ACS_ExecuteAlways, 6);
+    }
+}
+
+function void init_queue(void)
+{
+    queue_len = number_keys;
+    for (int i = 0; i < number_keys; i++)
+    {
+        rand_queue[i] = i;
+    }
+}
+
+function int sample_wo_repl(void)
+{
+    int idx = Random(0, queue_len - 1);
+    int ret = rand_queue[idx];
+    for (int i = idx + 1; i < queue_len; i++)
+    {
+        rand_queue[i - 1] = rand_queue[i];
+    }
+    queue_len -= 1;
+    return ret;
+}
+
+script 1 OPEN
+{
+
+}
+
+script 2 ENTER
+{
+    map_level = GetLevelInfo (LEVELINFO_LEVELNUM);
+
+    key_obj_idx = keys_used[Random(0, num_keys_used - 1)];
+
+    if (random_key_textures)
+    {
+        for (int i = 0; i < number_keys; i++)
+        {
+            curr_key_textures[i] = Random(0, num_key_textures[i] - 1);
+        }
+    }
+    else
+    {
+        for (i = 0; i < number_keys; i++)
+        {
+            curr_key_textures[i] = default_key_textures[i];
+        }
+    }
+
+    int obj_idx;
+    if (use_abs_keys_spawn_pos)
+    {
+        if (random_key_positions)
+        {
+            init_queue();
+            for (i = 0; i < number_keys; i++)
+            {
+                obj_idx = sample_wo_repl();
+                SpawnKeyAbsPos(i, obj_idx);
+            }
+        }
+        else
+        {
+            for (i = 0; i < number_keys; i++)
+            {
+                SpawnKeyAbsPos(i, i);
+            }
+        }
+    }
+    else if (random_key_positions)
+    {
+        for (i = 0; i < number_keys; i++)
+        {
+            SpawnKeyRandom(i, key_textures[i][curr_key_textures[i]], (i == key_obj_idx));
+        }
+    }
+    else
+    {
+        for (i = 0; i < number_keys; i++)
+        {
+            SpawnKey(i, key_textures[i][curr_key_textures[i]], (i == key_obj_idx));
+        }
+    }
+    reward = 0.0;
+
+    if (random_textures)
+    {
+        RandomTextures();
+    }
+    else
+    {
+        ReplaceTextures("CEIL5_2", floor_texture);
+        ReplaceTextures("CEIL5_1", ceiling_texture);
+        ReplaceTextures("STONE2", wall_texture);
+    }
+
+    if (use_abs_spawn_pos)
+    {
+        SetActorPosition(0, abs_spawn_x, abs_spawn_y, 0.0, 0);
+        SetActorAngle(0, random(0.0, 1.0));
+    }
+    else if (random_spawn)
+    {
+        TARGET_ID_END = TARGET_ID_START;
+        while(IsTIDUsed(TARGET_ID_END + 1))
+        {
+            TARGET_ID_END += 1;
+        }
+
+        SPAWN_LOC_ID = random(TARGET_ID_START, TARGET_ID_END);
+
+        SetActorPosition(0, GetActorX(SPAWN_LOC_ID) + random(-offset, offset), GetActorY(SPAWN_LOC_ID) + random(-offset, offset), 0.0, 0);
+	    SetActorAngle(0,random(0.0,1.0));
+    }
+    else
+    {
+        TARGET_ID_END = TARGET_ID_START;
+        while(IsTIDUsed(TARGET_ID_END + 1))
+        {
+            TARGET_ID_END += 1;
+        }
+
+        int TARGET_ID_START_float = TARGET_ID_START << 16;
+        int TARGET_ID_END_float = TARGET_ID_END << 16;
+
+        int SPAWN_LOC_ID_float = FixedMul (spawns[map_level], (TARGET_ID_END_float - TARGET_ID_START_float)) +  TARGET_ID_START_float;
+        SPAWN_LOC_ID = SPAWN_LOC_ID_float >> 16;
+
+        SetActorPosition(0, GetActorX(SPAWN_LOC_ID) + spawns_offset_x[map_level], GetActorY(SPAWN_LOC_ID) + spawns_offset_y[map_level], 0.0, 0);
+	    SetActorAngle(0, spawns_angle[map_level]);
+    }
+
+    for (i = 0; i < number_keys; i++)
+    {
+        obj_exists[i] = True;
+    }
+    last_obj_picked = -1;
+}
+
+script 5 (void)
+{
+    for (int i = 0; i < number_keys; i++)
+    {
+        if (obj_exists[i] && (!IsTIDUsed(target_id_offset + i)))
+        {
+            last_obj_picked = i;
+            obj_exists[i] = False;
+            break;
+        }
+    }
+    Exit_Normal(0);
+    restart;
+}
+
+script 6 (void)
+{
+    for (int i = 0; i < number_keys; i++)
+    {
+        if (obj_exists[i] && (!IsTIDUsed(target_id_offset + i)))
+        {
+            last_obj_picked = i;
+            obj_exists[i] = False;
+            break;
+        }
+    }
+}
