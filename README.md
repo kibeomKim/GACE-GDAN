@@ -14,8 +14,6 @@ This code contains our method, GACE&GDAN, for Visual Navigation tasks.
 - pytorch 1.7 +
 - tensorboard 2.4
 - MazeEnv [link]
-- VizNav for multi-target task [link]
-
 
 
 #### Run
