@@ -2,13 +2,11 @@
 
 import logging
 import os
-import datetime
 
 import gym
 import gym.spaces
 import numpy as np
 import random
-import imageio
 
 from vizdoom import DoomGame, Button, GameVariable
 
@@ -36,20 +34,15 @@ class VizDoom(gym.Env):
     Wraps a VizDoom environment
     """
 
-    def __init__(self, cfg_path, number_maps, num_obj_to_spawn, scaled_resolution=(42, 42), action_frame_repeat=4, clip=(-1, 1),
-                 seed=None, data_augmentation=False, living_reward=-0.0025, target_reward=5.0,
-                 non_target_penalty=1.0, timeout_penalty=1.0, non_target_break=False,
-                 gen_map=False):
+    def __init__(self, cfg_path, scaled_resolution=(42, 42), clip=(-1, 1),
+        living_reward=-0.0025, target_reward=5.0,
+        non_target_penalty=1.0, timeout_penalty=1.0, non_target_break=False):
         """
         Gym environment for training reinforcement learning agents.
         :param cfg_path: name of the mission (.cfg) to run
-        :param number_maps: number of maps which are contained within the cfg file
         :param scaled_resolution: resolution (height, width) of the observation to be returned with each step
-        :param action_frame_repeat: how many game tics should an action be active
         :param clip: how much the reward returned on each step should be clipped to
         :param seed: seed for random, used to determine the other that the doom maps should be shown.
-        :param data_augmentation: bool to determine whether or not to use data augmentation
-            (adding randomly colored, randomly sized boxes to observation)
         """
 
         self.cfg_path = str(cfg_path)
@@ -59,22 +52,16 @@ class VizDoom(gym.Env):
         if not self.cfg_path.endswith('.cfg'):
             raise ValueError("cfg_path must end with .cfg")
 
-        self.number_maps = number_maps
         self.scaled_resolution = scaled_resolution
-        self.action_frame_repeat = action_frame_repeat
+        self.action_frame_repeat = 4
         self.clip = clip
-        self.data_augmentation = data_augmentation
         self.last_obj_picked = -1
         self.living_reward = living_reward
         self.target_reward = target_reward
         self.non_target_penalty = non_target_penalty
         self.timeout_penalty = timeout_penalty
         self.non_target_break = non_target_break
-        self.num_obj_to_spawn = num_obj_to_spawn
-        self.gen_map = gen_map
-
-        if seed:
-            random.seed(seed)
+        self.num_obj_to_spawn = 4
 
         super(VizDoom, self).__init__()
         self._logger = logging.getLogger(__name__)
@@ -205,20 +192,9 @@ class VizDoom(gym.Env):
         If there is more than one maze it will randomly select a new maze.
         :return: initial observation of the environment as an rgb array in the format (rows, columns, channels)
         """
-        if self.number_maps is not 0:
-            self.doom_map = random.choice(["map" + str(i).zfill(2) for i in range(self.number_maps)])
-            self.env.set_doom_map(self.doom_map)
+        self.env.set_doom_map('map00')
 
-        if self.gen_map:    # Execute when running gen_maps.py
-            player_spawn_ok = self.check_player_spawn_ok()
-            print("player spawn check: {}".format(player_spawn_ok))
-            assert player_spawn_ok == 1, "Invalid player spawn position"
-
-            obj_spawn_ok = self.spawn_obj_check(iter=20)
-            print("object spawn check: {}".format(obj_spawn_ok))
-            assert obj_spawn_ok == True, "Invalid object spawn positions"
-        else:   # Execute when training/testing
-            self.spawn_obj_check(iter=-1)
+        self.spawn_obj_check(iter=-1)
 
         self._rgb_array = self.env.get_state().screen_buffer
         depth = self.env.get_state().depth_buffer
@@ -255,7 +231,7 @@ class VizDoom(gym.Env):
 
         for _ in range(self.action_frame_repeat):
             _ = self.env.make_action(list(one_hot_action), 1)
-            
+
             done = self.env.is_episode_finished()
 
             if not done:
@@ -286,7 +262,7 @@ class VizDoom(gym.Env):
                     reward = self.target_reward
                 else:
                     reward = (-1.0) * self.non_target_penalty
-            
+
             total_reward += reward
 
             x_pos = self.env.get_game_variable(GameVariable.POSITION_X)
@@ -300,9 +276,6 @@ class VizDoom(gym.Env):
             if done:
                 break
 
-        # if self.data_augmentation:
-        #     observation = VizDoom._augment_data(observation)
-
         while len(obs_batch) < self.action_frame_repeat:
             last_obs = obs_batch[len(obs_batch) - 1]
             obs_batch.append(last_obs)
@@ -312,43 +285,6 @@ class VizDoom(gym.Env):
         obs_batch = np.array(obs_batch)
 
         return obs_batch, total_reward, done, info_batch
-
-
-    def step_record(self, action, record_path, record_shape=(120, 140)):
-        """Perform the specified action for the self.action_frame_repeat ticks within the environment.
-        :param action: the index of the action to perform. The actions are specified when the cfg is created. The
-        defaults are "MOVE_FORWARD TURN_LEFT TURN_RIGHT"
-        :param record_path: the path to save the image of the environment to
-        :param record_shape: the shape of the image to save
-        :return: tuple following the gym interface, containing:
-            - observation as a numpy array of shape (rows, height, channels)
-            - scalar clipped reward
-            - boolean which is true when the environment is done
-            - {}
-        """
-        one_hot_action = np.zeros(self.action_space.n, dtype=int)
-        one_hot_action[action] = 1
-
-        reward = 0
-        for _ in range(self.action_frame_repeat // 2):
-            reward += self.env.make_action(list(one_hot_action), 2)
-            env_state = self.env.get_state()
-            if env_state:
-                self._rgb_array = self.env.get_state().screen_buffer
-                imageio.imwrite(os.path.join(record_path, str(datetime.datetime.now()) + ".png"),
-                                self._process_image(record_shape))
-
-        done = self.env.is_episode_finished()
-        # state is available only if the episode is still running
-        if not done:
-            self._rgb_array = self.env.get_state().screen_buffer
-        observation = self._process_image()
-
-        if self.clip:
-            reward = np.clip(reward, self.clip[0], self.clip[1])
-
-        return observation, reward, done, {}
-
 
     def close(self):
         """Close environment"""
@@ -361,13 +297,3 @@ class VizDoom(gym.Env):
             return self._rgb_array
 
         raise NotImplementedError
-
-
-    # def create_env(self):
-    #     """
-    #     Returns a function to create an environment with the generated mazes.
-    #     Used for vectorising the environment. For example as used by Stable Baselines
-    #     :return: a function to create an environment with the generated mazes
-    #     """
-    #     return lambda: VizDoom(self.cfg_path, number_maps=self.number_maps, scaled_resolution=self.scaled_resolution,
-    #                            action_frame_repeat=self.action_frame_repeat)
