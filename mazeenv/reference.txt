@@ -1,0 +1,3 @@
+The codes for visual navigation are modified versions of `microsoft/MazeExplorer` repository
+(https://github.com/microsoft/MazeExplorer) and `lionminhu/maze_env` (https://github.com/lionminhu/maze_env)
+repositories.
