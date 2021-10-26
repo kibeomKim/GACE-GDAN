@@ -5,10 +5,6 @@ import torch.multiprocessing as mp
 import torch.optim as optim
 
 import argparse
-import logging
-import datetime
-import time
-from collections import OrderedDict
 
 from multiprocessing import Manager
 from multiprocessing.managers import BaseManager

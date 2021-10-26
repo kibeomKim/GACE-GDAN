@@ -43,17 +43,9 @@ def run_sim(rank, shared_model, shared_optimizer, count, lock, goalStorage):
 
     maze_id = params.train_mazes[rank % len(params.train_mazes)]
     maze_path = params.mazes_path_root + str(maze_id)
-    env = MazeEnv.load_vizdoom_env(mazes_path=maze_path,
-                                   number_maps=1,
-                                   num_obj_to_spawn=len(params.keys_used_list),
-                                   action_frame_repeat=params.action_frame_repeat,
-                                   scaled_resolution=params.scaled_resolution,
-                                   living_reward=params.living_reward,
-                                   target_reward=params.target_reward,
-                                   non_target_penalty=params.non_target_penalty,
-                                   timeout_penalty=params.timeout_penalty,
-                                   non_target_break=params.non_target_break)
-
+    env = MazeEnv.load_vizdoom_env(maze_path, scaled_resolution=params.scaled_resolution,
+                     living_reward=params.living_reward, target_reward=params.target_reward, non_target_penalty=params.non_target_penalty,
+                     timeout_penalty=params.timeout_penalty, non_target_break=params.non_target_break)
     # Initialize model
     model = GDAN()
     with torch.cuda.device(gpu_id):

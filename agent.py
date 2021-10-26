@@ -97,7 +97,7 @@ class run_agent(object):
         batch_state, label = np.array(batch.goal), np.array(batch.label)
 
         batch_state = torch.from_numpy(batch_state).float()
-        label = torch.tensor(label)  # don't need to make one hot?
+        label = torch.tensor(label)
 
         with torch.cuda.device(self.gpu_id):
             batch_state = Variable(torch.FloatTensor(batch_state)).cuda()

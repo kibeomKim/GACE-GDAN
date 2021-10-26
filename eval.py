@@ -8,7 +8,6 @@ from agent import run_agent
 from params import params
 from mazeenv.mazeenv import MazeEnv
 import datetime
-import pdb
 
 from setproctitle import setproctitle as ptitle
 import time
@@ -40,17 +39,10 @@ def test(rank, shared_model, shared_optimizer, count, lock):
 
     # Load MazeEnv environment
     maze_id = params.eval_mazes[rank % len(params.eval_mazes)]
-    maze_path = params.mazes_path_root + str(maze_id) 
-    env = MazeEnv.load_vizdoom_env(mazes_path=maze_path,
-                                   number_maps=1,
-                                   num_obj_to_spawn=len(params.keys_used_list),
-                                   action_frame_repeat=params.action_frame_repeat,
-                                   scaled_resolution=params.scaled_resolution,
-                                   living_reward=params.living_reward,
-                                   target_reward=params.target_reward,
-                                   non_target_penalty=params.non_target_penalty,
-                                   timeout_penalty=params.timeout_penalty,
-                                   non_target_break=params.non_target_break)
+    maze_path = params.mazes_path_root + str(maze_id)
+    env = MazeEnv.load_vizdoom_env(maze_path, scaled_resolution=params.scaled_resolution,
+                     living_reward=params.living_reward, target_reward=params.target_reward, non_target_penalty=params.non_target_penalty,
+                     timeout_penalty=params.timeout_penalty, non_target_break=params.non_target_break)
 
     # Initialize model
     model = GDAN()
