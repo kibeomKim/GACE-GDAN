@@ -11,34 +11,36 @@ This code contains our method, GACE&GDAN, for Visual Navigation tasks.
 - python3
 - pytorch 1.7 +
 - tensorboard 2.4
-- MazeExplorer [[link](https://github.com/microsoft/MazeExplorer#installation)]
+- Multi-target Visual Navigation environments ([link](https://github.com/lionminhu/multitarget-visnav))
 
 
 ## Run
 
-Before you run this script, you have to check `params.py` for allocating your hardward settings properly.
+Before you run this script, please check `params.py` for allocating your GPU properly. Particularly, referring to below parameters,
 
-`self.gpu_ids_train = [0,1]` 
+```
+self.gpu_ids_train = [0,1]
+```
+and
+```
+self.gpu_ids_test = [0,1]
+```
 
-and 
+indicate which GPUs to allocate for training and evaluating, respectively. If you have only one, set these parameters to [0]. Otherwise, you may allocate more GPUs.
 
-`self.gpu_ids_test = [0,1]`
-
-are your id of gpus. If you have only one, leave [0] and if more, you may allocate more gpus.
-
-Especially, `self.num_training_process` is more than yours, it cause an error.
+Please make sure that `self.num_training_process` is set according to the number of CPU cores and the amount of GPU memory.
 
 
-
-When you are ready, run the script below:
-
-`python main.py`
+When you are ready, run the script to start the training:
+```
+python main.py
+```
 
 
 
 ## Citation
 
-If you think our research is helpful, please consider citing,
+If you find our research helpful, please consider citing our paper,
 ```
 @inproceedings{kim2021goal,
   title={Goal-Aware Cross-Entropy for Multi-Target Reinforcement Learning},
