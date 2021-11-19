@@ -14,7 +14,7 @@ from eval import test
 from shared_optim import SharedAdam
 from models import GDAN
 from params import params, log_params
-from goalStorage import goalStorage
+from goal_storage import goal_storage
 
 
 def main():
@@ -31,17 +31,17 @@ def main():
                                   weight_decay=params.weight_decay)
     shared_optimizer.share_memory()
 
-    BaseManager.register('goalStorage', goalStorage)
+    BaseManager.register('goal_storage', goal_storage)
     manager = BaseManager()
     manager.start()
-    shared_storage = manager.goalStorage()
+    shared_storage = manager.goal_storage()
 
     processes = []
     for rank in range(params.num_train_processes):
         p = mp.Process(target=run_sim, args=(rank, shared_model, shared_optimizer, count, lock, shared_storage))
         p.start()
         processes.append(p)
-    
+
     for rank in range(params.num_test_processes):
         p = mp.Process(target=test, args=(rank, shared_model, shared_optimizer, count, lock))
         p.start()

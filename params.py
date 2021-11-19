@@ -1,4 +1,3 @@
-from collections import OrderedDict
 import time
 import os
 import random
@@ -6,22 +5,23 @@ import datetime
 
 class Params:
     def __init__(self):
-        self.map = 'V1'  # or 'V2' 'V3' 'V4'
+        self.map = 'exp1'  # or 'exp2' 'exp3' 'exp4'
 
         # Configs for running trains/test
-        self.num_train_processes = 20
-        self.train_mazes = [0] * self.num_train_processes
+        self.num_train_processes = 2
+        self.train_mazes = [f'multitarget-visnav-{self.map}-v1'] * self.num_train_processes
 
-        if self.map == "V1" or self.map == "V3":
-            self.eval_mazes = [0]
-        elif self.map == "V2" or self.map == "V4":
-            self.eval_mazes = [0, 1]
+        if self.map == 'exp1' or self.map == 'exp3':
+            self.eval_mazes = [f'multitarget-visnav-{self.map}-v1']
+        elif self.map == 'exp2' or self.map == 'exp4':
+            self.eval_mazes = [f'multitarget-visnav-{self.map}-seen-v1',
+                               f'multitarget-visnav-{self.map}-unseen-v1']
 
         self.num_test_processes = len(self.eval_mazes)
 
         self.n_eval = 500
-        self.gpu_ids_train = [0, 1]
-        self.gpu_ids_test = [0, 1]
+        self.gpu_ids_train = [0]
+        self.gpu_ids_test = [0]
         self.seed = random.randint(0, 10000)
 
         # Model/optimizer hyperparameters
@@ -40,13 +40,12 @@ class Params:
         # Gym environment settings
         self.scaled_resolution = (42, 42)
         self.living_reward = -0.0025   # 4-frame stack, so living reward is quadrupled
-        self.target_reward = 10.0
-        self.non_target_penalty = 1.0
-        self.non_target_break = True
+        self.goal_reward = 10.0
+        self.non_goal_penalty = 1.0
+        self.non_goal_break = True
         self.timeout_penalty = 0.1
 
         # Logging-related
-        self.mazes_path_root = './maps/{}/'.format(self.map)
         now = datetime.datetime.now()
         nowDate = now.strftime('%Y-%m-%d-%H:%M:%S')
         self.log_file = nowDate
@@ -57,11 +56,8 @@ class Params:
 
 params = Params()
 
-def log_params(is_gen_maps=False):
-    if is_gen_maps:
-        path = './log/{}'.format(params.gen_maps_log_file)
-    else:
-        path = './log/{}'.format(params.log_file)
+def log_params():
+    path = './log/{}'.format(params.log_file)
 
     msg = str('start time\t{}\n'.format(time.strftime('%X %x %Z')))
 

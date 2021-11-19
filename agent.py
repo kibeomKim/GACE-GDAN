@@ -32,10 +32,10 @@ def postprocess(logit):
 
 
 class run_agent(object):
-    def __init__(self, model, gpu_id, goalStorage=None):
+    def __init__(self, model, gpu_id, goal_storage=None):
         self.model = model
         self.gpu_id = gpu_id
-        self.goalStorage = goalStorage
+        self.goal_storage = goal_storage
         self.hx, self.cx = None, None
         self.eps_len = 0
         self.values = []
@@ -93,7 +93,7 @@ class run_agent(object):
         return len(self.rewards)
 
     def training_goal_discriminator(self):
-        batch = self.goalStorage.sample(params.goal_batch_size)
+        batch = self.goal_storage.sample(params.goal_batch_size)
         batch_state, label = np.array(batch.goal), np.array(batch.label)
 
         batch_state = torch.from_numpy(batch_state).float()

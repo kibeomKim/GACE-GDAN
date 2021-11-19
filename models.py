@@ -1,9 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from utils import norm_col_init, weights_init
-
-import numpy as np
 
 
 class Feature_Extractor(nn.Module):

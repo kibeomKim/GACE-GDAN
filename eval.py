@@ -6,14 +6,15 @@ from torch.utils.tensorboard import SummaryWriter
 from models import GDAN
 from agent import run_agent
 from params import params
-from mazeenv.mazeenv import MazeEnv
 import datetime
 
 from setproctitle import setproctitle as ptitle
 import time
 import numpy as np
-import random
 import os
+
+import gym
+import multitarget_visnav
 
 
 def test(rank, shared_model, shared_optimizer, count, lock):
@@ -37,12 +38,14 @@ def test(rank, shared_model, shared_optimizer, count, lock):
     if gpu_id >= 0:
         torch.cuda.manual_seed(params.seed + rank)
 
-    # Load MazeEnv environment
-    maze_id = params.eval_mazes[rank % len(params.eval_mazes)]
-    maze_path = params.mazes_path_root + str(maze_id)
-    env = MazeEnv.load_vizdoom_env(maze_path, scaled_resolution=params.scaled_resolution,
-                     living_reward=params.living_reward, target_reward=params.target_reward, non_target_penalty=params.non_target_penalty,
-                     timeout_penalty=params.timeout_penalty, non_target_break=params.non_target_break)
+    # Load Vizdoom environment
+    maze_id = params.eval_mazes[rank % len(params.train_mazes)]
+    env = gym.make(maze_id, scaled_resolution=params.scaled_resolution,
+                   living_reward=params.living_reward,
+                   goal_reward=params.goal_reward,
+                   non_goal_penalty=params.non_goal_penalty,
+                   timeout_penalty=params.timeout_penalty,
+                   non_goal_break=params.non_goal_break)
 
     # Initialize model
     model = GDAN()
@@ -53,7 +56,7 @@ def test(rank, shared_model, shared_optimizer, count, lock):
     agent = run_agent(model, gpu_id)
     now = datetime.datetime.now()
     nowDate = now.strftime('%Y-%m-%d-%H:%M:%S')
-    writer = SummaryWriter('runs/GDAN-{} {:d}-{}'.format(params.map, maze_id, nowDate))
+    writer = SummaryWriter('runs/GDAN_{}_{}'.format(params.map, maze_id, nowDate))
 
     best_rate = 0.0
     save_model_index = 0
@@ -76,7 +79,7 @@ def testing(rank, env, maze_id, gpu_id, agent, n_update, best_rate, save_model_i
 
     for i in range(params.n_eval):
         next_obs = env.reset()
-        instruction = env.get_target_idx()
+        instruction = env.get_goal_idx()
 
         instruction = torch.from_numpy(np.array(instruction)).view(1, -1)
 
@@ -131,14 +134,14 @@ def testing(rank, env, maze_id, gpu_id, agent, n_update, best_rate, save_model_i
             "Time {}\n".format(time.strftime("%dd %Hh %Mm %Ss", time.gmtime(time.time() - start_time))),
             "Episode Played: {:d}\n".format(len(evals)),
             "N_Update = {:d}\n".format(n_update),
-            "Maze id: {:d}\n".format(maze_id),
+            "Maze id: {}\n".format(maze_id),
             "Avg Reward = {:5.3f}\n".format(avg_reward),
             "Avg Length = {:.3f}\n".format(avg_length),
             "Best rate {:3.2f}, Success rate {:3.2f}%".format(best_rate, success_rate)
         ])
-        writer.add_scalar('successRate/maze {:d}'.format(maze_id), success_rate / 100., n_update)
-        writer.add_scalar('avgReward/maze {:d}'.format(maze_id), avg_reward, n_update)
-        writer.add_scalar('avgLength/maze {:d}'.format(maze_id), avg_length, n_update)
+        writer.add_scalar('successRate/maze {}'.format(maze_id), success_rate / 100., n_update)
+        writer.add_scalar('avgReward/maze {}'.format(maze_id), avg_reward, n_update)
+        writer.add_scalar('avgLength/maze {}'.format(maze_id), avg_length, n_update)
         # print(msg)
 
     return best_rate, save_model_index

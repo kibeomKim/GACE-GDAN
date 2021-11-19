@@ -3,7 +3,8 @@
 wgt/
 log/
 run/
+runs/
 *wgt/
 */*dbg*
 _vizdoom.ini
-mazeenv/maze.acs
+_vizdoom/
