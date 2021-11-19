@@ -18,8 +18,6 @@ import os
 
 from params import params
 
-targets = list(params.key_categories.keys())
-
 def run_sim(rank, shared_model, shared_optimizer, count, lock, goalStorage):
     # Set up logging
     if not os.path.exists('./'+params.weight_dir):
