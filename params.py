@@ -10,19 +10,19 @@ class Params:
         # Configs for running trains/test
         self.num_train_processes = 20
         if self.map in ['exp1', 'exp3']:
-            self.train_mazes = [f'multitarget-visnav-{self.map}-v1'] * self.num_train_processes
+            self.train_maps = [f'multitarget-visnav-{self.map}-v1'] * self.num_train_processes
         elif self.map in ['exp2', 'exp4']:
-            self.train_mazes = [f'multitarget-visnav-{self.map}-seen-v1'] * self.num_train_processes
+            self.train_maps = [f'multitarget-visnav-{self.map}-seen-v1'] * self.num_train_processes
         else:
             raise ValueError('self.map must be provided as exp{1,2,3,4}.')
 
         if self.map in ['exp1', 'exp3']:
-            self.eval_mazes = [f'multitarget-visnav-{self.map}-v1']
+            self.eval_maps = [f'multitarget-visnav-{self.map}-v1']
         else:
-            self.eval_mazes = [f'multitarget-visnav-{self.map}-seen-v1',
+            self.eval_maps = [f'multitarget-visnav-{self.map}-seen-v1',
                                f'multitarget-visnav-{self.map}-unseen-v1']
 
-        self.num_test_processes = len(self.eval_mazes)
+        self.num_test_processes = len(self.eval_maps)
 
         self.n_eval = 500
         self.gpu_ids_train = [0, 1]
@@ -70,7 +70,7 @@ def log_params():
     for key in params_dict.keys():
         msg += '{}\t{}\n'.format(key, str(params_dict[key]))
 
-    msg += '\n' + '\t'.join(['time', 'numUpdates', 'mazeId', 'saveModelIdx', 'avgReward', 'avgLength', 'successRate', 'bestRate']) + '\n'
+    msg += '\n' + '\t'.join(['time', 'numUpdates', 'mapId', 'saveModelIdx', 'avgReward', 'avgLength', 'successRate', 'bestRate']) + '\n'
     csv_path = path + '.csv'
     if not os.path.isdir('./log'):
         os.mkdir('./log')

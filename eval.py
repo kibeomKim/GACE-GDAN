@@ -39,8 +39,8 @@ def test(rank, shared_model, shared_optimizer, count, lock):
         torch.cuda.manual_seed(params.seed + rank)
 
     # Load Vizdoom environment
-    maze_id = params.eval_mazes[rank % len(params.train_mazes)]
-    env = gym.make(maze_id, scaled_resolution=params.scaled_resolution,
+    map_id = params.eval_maps[rank % len(params.train_maps)]
+    env = gym.make(map_id, scaled_resolution=params.scaled_resolution,
                    living_reward=params.living_reward,
                    goal_reward=params.goal_reward,
                    non_goal_penalty=params.non_goal_penalty,
@@ -56,7 +56,7 @@ def test(rank, shared_model, shared_optimizer, count, lock):
     agent = run_agent(model, gpu_id)
     now = datetime.datetime.now()
     nowDate = now.strftime('%Y-%m-%d-%H:%M:%S')
-    writer = SummaryWriter('runs/GDAN_{}_{}'.format(params.map, maze_id, nowDate))
+    writer = SummaryWriter('runs/GDAN_{}_{}'.format(params.map, map_id, nowDate))
 
     best_rate = 0.0
     save_model_index = 0
@@ -68,11 +68,11 @@ def test(rank, shared_model, shared_optimizer, count, lock):
             agent.model.load_state_dict(shared_model.state_dict())
 
         start_time = time.time()
-        best_rate, save_model_index = testing(rank, env, maze_id, gpu_id, agent, n_update, best_rate,
+        best_rate, save_model_index = testing(rank, env, map_id, gpu_id, agent, n_update, best_rate,
                                               save_model_index, start_time, writer, shared_optimizer)
 
 
-def testing(rank, env, maze_id, gpu_id, agent, n_update, best_rate, save_model_index, start_time,
+def testing(rank, env, map_id, gpu_id, agent, n_update, best_rate, save_model_index, start_time,
             writer, optimizer):
     evals = []
     agent.model.eval()
@@ -134,14 +134,14 @@ def testing(rank, env, maze_id, gpu_id, agent, n_update, best_rate, save_model_i
             "Time {}\n".format(time.strftime("%dd %Hh %Mm %Ss", time.gmtime(time.time() - start_time))),
             "Episode Played: {:d}\n".format(len(evals)),
             "N_Update = {:d}\n".format(n_update),
-            "Maze id: {}\n".format(maze_id),
+            "Map id: {}\n".format(map_id),
             "Avg Reward = {:5.3f}\n".format(avg_reward),
             "Avg Length = {:.3f}\n".format(avg_length),
             "Best rate {:3.2f}, Success rate {:3.2f}%".format(best_rate, success_rate)
         ])
-        writer.add_scalar('successRate/maze {}'.format(maze_id), success_rate / 100., n_update)
-        writer.add_scalar('avgReward/maze {}'.format(maze_id), avg_reward, n_update)
-        writer.add_scalar('avgLength/maze {}'.format(maze_id), avg_length, n_update)
+        writer.add_scalar('successRate/map {}'.format(map_id), success_rate / 100., n_update)
+        writer.add_scalar('avgReward/map {}'.format(map_id), avg_reward, n_update)
+        writer.add_scalar('avgLength/map {}'.format(map_id), avg_length, n_update)
         # print(msg)
 
     return best_rate, save_model_index

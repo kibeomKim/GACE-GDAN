@@ -38,8 +38,8 @@ def run_sim(rank, shared_model, shared_optimizer, count, lock, goal_storage):
         torch.cuda.manual_seed(params.seed + rank)
 
     # Load Vizdoom environment
-    maze_id = params.train_mazes[rank % len(params.train_mazes)]
-    env = gym.make(maze_id, scaled_resolution=params.scaled_resolution,
+    map_id = params.train_maps[rank % len(params.train_maps)]
+    env = gym.make(map_id, scaled_resolution=params.scaled_resolution,
                    living_reward=params.living_reward,
                    goal_reward=params.goal_reward,
                    non_goal_penalty=params.non_goal_penalty,
