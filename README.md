@@ -11,6 +11,8 @@ This code contains our method, GACE&GDAN, for Visual Navigation tasks.
 - python3
 - pytorch 1.7 +
 - tensorboard 2.4
+- numpy 1.17
+- setproctitle 1.2
 - Multi-target Visual Navigation environments ([link](https://github.com/lionminhu/multitarget-visnav))
 
 

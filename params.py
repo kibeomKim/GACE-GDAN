@@ -5,23 +5,28 @@ import datetime
 
 class Params:
     def __init__(self):
-        self.map = 'exp1'  # or 'exp2' 'exp3' 'exp4'
+        self.map = 'exp1'  # one of 'exp1' 'exp2' 'exp3' 'exp4'
 
         # Configs for running trains/test
-        self.num_train_processes = 2
-        self.train_mazes = [f'multitarget-visnav-{self.map}-v1'] * self.num_train_processes
+        self.num_train_processes = 20
+        if self.map in ['exp1', 'exp3']:
+            self.train_mazes = [f'multitarget-visnav-{self.map}-v1'] * self.num_train_processes
+        elif self.map in ['exp2', 'exp4']:
+            self.train_mazes = [f'multitarget-visnav-{self.map}-seen-v1'] * self.num_train_processes
+        else:
+            raise ValueError('self.map must be provided as exp{1,2,3,4}.')
 
-        if self.map == 'exp1' or self.map == 'exp3':
+        if self.map in ['exp1', 'exp3']:
             self.eval_mazes = [f'multitarget-visnav-{self.map}-v1']
-        elif self.map == 'exp2' or self.map == 'exp4':
+        else:
             self.eval_mazes = [f'multitarget-visnav-{self.map}-seen-v1',
                                f'multitarget-visnav-{self.map}-unseen-v1']
 
         self.num_test_processes = len(self.eval_mazes)
 
         self.n_eval = 500
-        self.gpu_ids_train = [0]
-        self.gpu_ids_test = [0]
+        self.gpu_ids_train = [0, 1]
+        self.gpu_ids_test = [0, 1]
         self.seed = random.randint(0, 10000)
 
         # Model/optimizer hyperparameters
