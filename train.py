@@ -7,18 +7,16 @@ import numpy as np
 from models import GDAN
 from agent import run_agent
 
-from mazeenv.mazeenv import MazeEnv
-import datetime
-
-import pdb
 from setproctitle import setproctitle as ptitle
-import time
 import random
 import os
+import gym
 
+import multitarget_visnav
 from params import params
 
-def run_sim(rank, shared_model, shared_optimizer, count, lock, goalStorage):
+
+def run_sim(rank, shared_model, shared_optimizer, count, lock, goal_storage):
     # Set up logging
     if not os.path.exists('./'+params.weight_dir):
         os.mkdir('./'+params.weight_dir)
@@ -39,32 +37,36 @@ def run_sim(rank, shared_model, shared_optimizer, count, lock, goalStorage):
     if gpu_id >= 0:
         torch.cuda.manual_seed(params.seed + rank)
 
-    maze_id = params.train_mazes[rank % len(params.train_mazes)]
-    maze_path = params.mazes_path_root + str(maze_id)
-    env = MazeEnv.load_vizdoom_env(maze_path, scaled_resolution=params.scaled_resolution,
-                     living_reward=params.living_reward, target_reward=params.target_reward, non_target_penalty=params.non_target_penalty,
-                     timeout_penalty=params.timeout_penalty, non_target_break=params.non_target_break)
+    # Load Vizdoom environment
+    map_id = params.train_maps[rank % len(params.train_maps)]
+    env = gym.make(map_id, scaled_resolution=params.scaled_resolution,
+                   living_reward=params.living_reward,
+                   goal_reward=params.goal_reward,
+                   non_goal_penalty=params.non_goal_penalty,
+                   timeout_penalty=params.timeout_penalty,
+                   non_goal_break=params.non_goal_break)
+
     # Initialize model
     model = GDAN()
     with torch.cuda.device(gpu_id):
         model = model.cuda()
 
     # Initialize agent
-    agent = run_agent(model, gpu_id, goalStorage)
+    agent = run_agent(model, gpu_id, goal_storage)
 
     warmup = True
     i = 0
     while True:
 
         i += 1
-        warmup = training(env, gpu_id, shared_model, agent, shared_optimizer, lock, count, warmup, rank, goalStorage)
+        warmup = training(env, gpu_id, shared_model, agent, shared_optimizer, lock, count, warmup, rank, goal_storage)
 
 
-def training(env, gpu_id, shared_model, agent, optimizer, lock, count, warmup, rank, goalStorage):
+def training(env, gpu_id, shared_model, agent, optimizer, lock, count, warmup, rank, goal_storage):
 
     next_obs = env.reset()
     obs = next_obs
-    instruction_idx = env.get_target_idx()  # env.get_instruction()
+    instruction_idx = env.get_goal_idx()  # env.get_instruction()
     instruction = torch.from_numpy(np.array(instruction_idx)).view(1, -1)
 
     with torch.cuda.device(gpu_id):
@@ -95,10 +97,10 @@ def training(env, gpu_id, shared_model, agent, optimizer, lock, count, warmup, r
             agent.done = True
 
             if reward >= 1.0 and num_steps > 1: # when before_obs is not the same with obs
-                goalStorage.put(before_obs, instruction_idx)
+                goal_storage.put(before_obs, instruction_idx)
 
             if warmup:
-                if goalStorage.len() > params.minimum_warmup:
+                if goal_storage.len() > params.minimum_warmup:
                     warmup = False
             else:
                 if agent.get_reward_len() > 1:  # Avoid cases of success as soon as start

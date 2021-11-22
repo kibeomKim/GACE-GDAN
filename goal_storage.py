@@ -7,7 +7,7 @@ from collections import namedtuple, deque
 Transition = namedtuple('Transition', ('goal', 'label'))
 
 
-class goalStorage(object):
+class goal_storage(object):
     def __init__(self, capacity=100000):
         self.capacity = capacity
         self.memory = deque(maxlen=self.capacity)
