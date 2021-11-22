@@ -4,8 +4,8 @@ from torch.utils.tensorboard import SummaryWriter
 
 import numpy as np
 
-from models import GDAN
-from agent import run_agent
+from GACE_GDAN.models import GDAN
+from GACE_GDAN.agent import run_agent
 
 from setproctitle import setproctitle as ptitle
 import random

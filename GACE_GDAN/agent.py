@@ -4,7 +4,7 @@ from torch.autograd import Variable
 from torch.nn.utils import clip_grad_norm_
 
 import numpy as np
-from utils import ensure_shared_grads
+from utils.utils import ensure_shared_grads
 
 from params import params
 

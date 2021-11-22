@@ -3,8 +3,6 @@ from torch.autograd import Variable
 from torch.utils.tensorboard import SummaryWriter
 # tensorboard --logdir=runs --bind_all
 
-from models import GDAN
-from agent import run_agent
 from params import params
 import datetime
 
@@ -15,6 +13,9 @@ import os
 
 import gym
 import multitarget_visnav
+
+from GACE_GDAN.models import GDAN
+from GACE_GDAN.agent import run_agent
 
 
 def test(rank, shared_model, shared_optimizer, count, lock):

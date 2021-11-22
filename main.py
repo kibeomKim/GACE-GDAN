@@ -9,12 +9,14 @@ import argparse
 from multiprocessing import Manager
 from multiprocessing.managers import BaseManager
 
-from train import run_sim
-from eval import test
-from shared_optim import SharedAdam
-from models import GDAN
 from params import params, log_params
-from goal_storage import goal_storage
+
+from GACE_GDAN.train import run_sim
+from GACE_GDAN.eval import test
+from GACE_GDAN.goal_storage import goal_storage
+from GACE_GDAN.models import GDAN
+
+from utils.shared_optim import SharedAdam
 
 
 def main():
