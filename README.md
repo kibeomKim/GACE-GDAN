@@ -44,10 +44,11 @@ python main.py
 
 If you find our research helpful, please consider citing our paper,
 ```
-@inproceedings{kim2021goal,
+@article{kim2021goal,
   title={Goal-Aware Cross-Entropy for Multi-Target Reinforcement Learning},
   author={Kim, Kibeom and Lee, Min Whoo and Kim, Yoonsung and Ryu, JeHwan and Lee, Minsu and Zhang, Byoung-Tak},
-  booktitle={Thirty-Fifth Conference on Neural Information Processing Systems},
+  journal={Advances in Neural Information Processing Systems},
+  volume={34},
   year={2021}
 }
 ```
