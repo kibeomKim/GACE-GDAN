@@ -1,6 +1,6 @@
 # Goal-Aware Cross-Entropy for Multi-Target Reinforcement Learning (NeurIPS'21) [[arxiv](http://arxiv.org/abs/2110.12985)]
 
-This repository contains sourcecode of our paper "Goal-Aware Cross-Entropy for Multi-Target Reinforcement Learning" at NeurIPS 2021.
+This repository contains source code of our paper "Goal-Aware Cross-Entropy for Multi-Target Reinforcement Learning" at NeurIPS 2021.
 
 This code contains our method, GACE&GDAN, for Visual Navigation tasks.
 
@@ -8,7 +8,7 @@ This code contains our method, GACE&GDAN, for Visual Navigation tasks.
 
 ## Dependencies
 
-- python3
+- python 3
 - pytorch 1.7 +
 - tensorboard 2.4
 - numpy 1.17
